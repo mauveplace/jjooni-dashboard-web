@@ -145,7 +145,7 @@ async function serve(url, request, route) {
   // Old OBS shortcuts and cross-app top-level navigations are sent to the correct
   // independent app. Relative subresources still resolve within the same archive.
   if(request.mode==='navigate' && ((route.app==='legacy'&&dest==='obs')||(route.app!=='legacy'&&route.app!==dest))){
-    return Response.redirect(appURL(dest,'v/'+name)+url.search,302);
+    return Response.redirect(appURL(dest,'v/'+url.pathname.slice(route.prefix.length))+url.search,302);
   }
   // Never install a nested network-only PWA worker over this decrypting worker.
   if(name==='pwa-install.js')return new Response('/* PWA is owned by the authenticated outer worker. */',{headers:{'Content-Type':TYPES.js,'Cache-Control':'no-store'}});

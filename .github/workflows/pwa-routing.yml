@@ -10,7 +10,7 @@ permissions:
 jobs:
   routing:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,12 +19,11 @@ jobs:
       - run: node --check app/sw.js && node --check app/unlock.js && node --test tests/pwa-routing.test.cjs
 
       - name: Verify actual GitHub Pages launcher URLs
-        if: github.event_name == 'push'
         shell: bash
         run: |
           set -euo pipefail
           base='https://mauveplace.github.io/jjooni-dashboard-web/app/'
-          for i in $(seq 1 18); do
+          for i in $(seq 1 12); do
             ok=1
             for app in ct obs; do
               html=$(curl -L --max-time 10 -s -o "/tmp/$app.html" -w '%{http_code}' "${base}${app}/?verify=${GITHUB_SHA}-${i}" || true)
