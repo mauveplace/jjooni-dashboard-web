@@ -1,6 +1,12 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
+  const ROOT = new URL('./', document.currentScript.src);
+  const params = new URLSearchParams(location.search);
+  const relative = location.pathname.slice(ROOT.pathname.length);
+  const target = relative.startsWith('obs/') || params.get('target') === 'obs' ? 'obs' : relative.startsWith('ct/') || params.get('target') === 'ct' ? 'ct' : 'legacy';
+  const landing = new URL(target === 'obs' ? 'obs/v/market-observatory/' : target === 'ct' ? 'ct/v/' : 'v/', ROOT).href;
+  const appName = target === 'obs' ? '옵저버토리' : '컨트롤타워';
   const msg = (t, cls) => { const m = $('msg'); m.textContent = t; m.className = cls || ''; };
   const INFO = new TextEncoder().encode('jjooni-gh-site-v1');
 
@@ -22,8 +28,21 @@
 
   async function worker() {
     if (!('serviceWorker' in navigator)) throw Error('이 브라우저는 서비스워커를 지원하지 않습니다.');
-    await navigator.serviceWorker.register('./sw.js', {scope: './', updateViaCache: 'none'});
-    return (await navigator.serviceWorker.ready).active;
+    const reg = await navigator.serviceWorker.register(new URL('sw.js', ROOT), {scope: ROOT.pathname, updateViaCache: 'none'});
+    // An existing device may still have v1 active while the new worker installs.
+    // Do not navigate into new virtual routes until the compatible worker responds.
+    if (target === 'legacy') return (await navigator.serviceWorker.ready).active;
+    await reg.update().catch(() => {});
+    const until = Date.now() + 25000;
+    while (Date.now() < until) {
+      const w = reg.active;
+      if (w?.state === 'activated') {
+        const status = await ask(w, 'status', 1500).catch(() => null);
+        if (status?.version === 'gh-site-v2-pwa') return w;
+      }
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    throw Error('APP_WORKER_UPDATE_REQUIRED');
   }
   function ask(w, data, ms) {
     return new Promise((res, rej) => {
@@ -54,8 +73,8 @@
       await putKey(key);
       const r = await ask(w, 'update');
       if (!r.ok) { await delKey(); throw Error(r.error || 'UPDATE'); }
-      msg('등록 완료. 컨트롤타워를 엽니다.', 'good');
-      location.replace('./v/');
+      msg('등록 완료. '+appName+'를 엽니다.', 'good');
+      location.replace(landing);
     } catch (e) {
       const m = String(e && e.message || e);
       msg(m === 'FORMAT' ? '보안키는 64자리(0-9, a-f)입니다. 공백 없이 다시 붙여넣으세요.' : /OperationError|decrypt/i.test(m) || (e && e.name === 'OperationError') ? '보안키가 맞지 않습니다.' : '열기 실패: ' + m, 'bad');
@@ -86,7 +105,7 @@
         const w = await worker();
         let r = await ask(w, 'reload', 30000);
         if (!r.ok) { msg('최신 화면을 받는 중…'); r = await ask(w, 'update'); }
-        if (r.ok) { location.replace('./v/'); return; }
+        if (r.ok) { location.replace(landing); return; }
       } catch (_) {}
       msg('저장된 화면을 열지 못했습니다. 최신 데이터 확인을 눌러주세요.', 'bad');
     }
