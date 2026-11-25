@@ -17,3 +17,25 @@ jobs:
         with:
           node-version: '22'
       - run: node --check app/sw.js && node --check app/unlock.js && node --test tests/pwa-routing.test.cjs
+
+      - name: Verify actual GitHub Pages launcher URLs
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://mauveplace.github.io/jjooni-dashboard-web/app/'
+          for i in $(seq 1 18); do
+            ok=1
+            for app in ct obs; do
+              html=$(curl -L --max-time 10 -s -o "/tmp/$app.html" -w '%{http_code}' "${base}${app}/?verify=${GITHUB_SHA}-${i}" || true)
+              manifest=$(curl -L --max-time 10 -s -o "/tmp/$app.json" -w '%{http_code}' "${base}${app}/manifest.webmanifest?verify=${GITHUB_SHA}-${i}" || true)
+              echo "PWA_LIVE app=$app html=$html manifest=$manifest"
+              if [ "$html" != 200 ] || [ "$manifest" != 200 ] || ! grep -q '../unlock.js' "/tmp/$app.html" || ! python3 -c 'import json,sys; a=sys.argv[1]; m=json.load(open("/tmp/"+a+".json")); assert m["id"]=="/jjooni-dashboard-web/app/"+a+"/"' "$app"; then ok=0; fi
+            done
+            worker=$(curl -L --max-time 10 -s -o /tmp/pwa-worker.js -w '%{http_code}' "${base}sw.js?verify=${GITHUB_SHA}-${i}" || true)
+            echo "PWA_LIVE worker=$worker"
+            if [ "$ok" = 1 ] && [ "$worker" = 200 ] && grep -q 'gh-site-v2-pwa' /tmp/pwa-worker.js; then echo PWA_LIVE_LAUNCHERS=PASS; exit 0; fi
+            sleep 10
+          done
+          echo PWA_LIVE_LAUNCHERS=FAILED
+          exit 1
