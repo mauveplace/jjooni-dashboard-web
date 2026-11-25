@@ -3,10 +3,21 @@
  * non-extractable AES key in IndexedDB and the ciphertext in Cache Storage.
  * Decrypted files exist only in this worker's memory and are served under ./v/. */
 'use strict';
-const VERSION = 'gh-site-v1';
+const VERSION = 'gh-site-v2-pwa';
 const RAW = 'https://raw.githubusercontent.com/mauveplace/jjooni-dashboard-web/enc-site/';
 const SCOPE = new URL('./', self.registration.scope).href;
-const VIRT = new URL('v/', SCOPE).pathname;
+// The two installed apps have disjoint start URLs/scopes. A single trusted
+// decryptor shares device enrollment and ciphertext, never the launch target.
+const ROUTES = ['ct','obs','legacy'].map(app => ({app, prefix:new URL(app==='legacy'?'v/':app+'/v/',SCOPE).pathname}));
+function routeFor(url){return ROUTES.find(r=>url.pathname.startsWith(r.prefix))}
+function appFor(name){return name==='market-observatory'||name.startsWith('market-observatory/')?'obs':'ct'}
+function appURL(app, suffix=''){return new URL(app+'/'+suffix,SCOPE).href}
+function appManifest(name){
+  const app=appFor(name),base=new URL(app+'/',SCOPE).pathname;
+  const isObs=app==='obs';
+  const icons=base+'v/'+(isObs?'market-observatory/':'')+'icons/'+(isObs?'obs':'ct')+'-symbol-';
+  return {id:base,name:isObs?'JJOONI Market Observatory':'JJOONI Investment Control Tower',short_name:isObs?'JJOONI Markets':'JJOONI Tower',lang:'ko',start_url:base+'?source=pwa',scope:base,display:'standalone',background_color:isObs?'#f4f7fb':'#08111c',theme_color:isObs?'#071b35':'#08111c',icons:[192,512].map(size=>({src:icons+size+'.png',sizes:size+'x'+size,type:'image/png',purpose:'any maskable'}))};
+}
 const CACHE = 'jjooni-gh-site-v1';
 const BIN_KEY = SCOPE + '__site.bin';
 const META_KEY = SCOPE + '__site.json';
@@ -124,11 +135,21 @@ self.addEventListener('message', e => {
   else if (e.data === 'status') { reply({ok: true, version: VERSION, loaded: !!site, sha: site && site.sha, files: site ? site.entries.size : 0}); }
 });
 
-async function serve(url, request) {
+async function serve(url, request, route) {
   let s;
   try { s = await ensureSite(); } catch (_) { s = null; }
-  if (!s) return request.mode === 'navigate' ? Response.redirect(SCOPE + '?locked=1', 302) : new Response('LOCKED', {status: 401});
-  let name = decodeURIComponent(url.pathname.slice(VIRT.length));
+  let name;
+  try { name = decodeURIComponent(url.pathname.slice(route.prefix.length)); } catch (_) { return new Response('BAD_PATH', {status:400}); }
+  const dest=appFor(name);
+  if (!s) return request.mode === 'navigate' ? Response.redirect(appURL(dest,'?locked=1'), 302) : new Response('LOCKED', {status: 401});
+  // Old OBS shortcuts and cross-app top-level navigations are sent to the correct
+  // independent app. Relative subresources still resolve within the same archive.
+  if(request.mode==='navigate' && ((route.app==='legacy'&&dest==='obs')||(route.app!=='legacy'&&route.app!==dest))){
+    return Response.redirect(appURL(dest,'v/'+name)+url.search,302);
+  }
+  // Never install a nested network-only PWA worker over this decrypting worker.
+  if(name==='pwa-install.js')return new Response('/* PWA is owned by the authenticated outer worker. */',{headers:{'Content-Type':TYPES.js,'Cache-Control':'no-store'}});
+  if(name==='manifest.webmanifest'||name==='market-observatory/manifest.webmanifest')return new Response(JSON.stringify(appManifest(name)),{headers:{'Content-Type':TYPES.webmanifest,'Cache-Control':'no-store'}});
   if (name === '' || name.endsWith('/')) name += 'index.html';
   let e = s.entries.get(name);
   if (!e && !/\.[a-z0-9]+$/i.test(name) && s.entries.get(name + '/index.html')) return Response.redirect(url.pathname + '/' + url.search, 301);
@@ -140,8 +161,9 @@ async function serve(url, request) {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin || !url.pathname.startsWith(VIRT) || e.request.method !== 'GET') return;
+  const route=routeFor(url);
+  if (url.origin !== self.location.origin || !route || e.request.method !== 'GET') return;
   if (e.request.mode === 'navigate' && pending) { site = pending; pending = null; }
-  e.respondWith(serve(url, e.request));
+  e.respondWith(serve(url, e.request, route));
   if (e.request.mode === 'navigate') e.waitUntil(checkUpdate(false).catch(() => {}));
 });

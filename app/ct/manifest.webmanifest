@@ -1,0 +1,25 @@
+{
+  "id": "/jjooni-dashboard-web/app/ct/",
+  "name": "JJOONI Investment Control Tower",
+  "short_name": "JJOONI Tower",
+  "lang": "ko",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08111c",
+  "theme_color": "#08111c",
+  "icons": [
+    {
+      "src": "./v/icons/ct-symbol-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./v/icons/ct-symbol-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
