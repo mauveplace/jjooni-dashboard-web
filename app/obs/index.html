@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self' https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; frame-src 'none'; manifest-src 'self'; img-src 'self'">
+<title>JJOONI Market Observatory · 기기 잠금 해제</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#071b35">
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#08111c;color:#eaf2fb;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{width:min(92vw,440px);padding:28px;border:1px solid #263b52;border-radius:20px;background:linear-gradient(145deg,#111d2a,#0b1520)}
+.eyebrow{font-size:12px;letter-spacing:.16em;color:#7390ac;font-weight:800}
+h1{font-size:26px;line-height:1.2;margin:8px 0}
+p{color:#91a6ba;font-size:14px;margin:6px 0 16px}
+label{display:block;font-size:13px;color:#9bb1c8;margin:10px 0 4px}
+textarea{width:100%;min-height:76px;background:#07101a;color:#fff;border:1px solid #30465c;border-radius:12px;padding:12px;font:15px ui-monospace,monospace;word-break:break-all;resize:none}
+button{width:100%;margin-top:14px;padding:14px;border:0;border-radius:12px;background:#2167d5;color:#fff;font:inherit;font-weight:800}
+button.ghost{background:transparent;border:1px solid #30465c;color:#9bb1c8;font-weight:600}
+button:disabled{opacity:.55}
+#msg{min-height:22px;margin-top:12px;font-size:13px;color:#8ca1b5}
+#msg.bad{color:#ff7186}#msg.good{color:#56deb2}
+.links{display:flex;gap:10px;margin-top:14px}.links a{flex:1;text-align:center;padding:12px;border:1px solid #30465c;border-radius:12px;color:#a9cfff;text-decoration:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<div class="eyebrow">PRIVATE · ENCRYPTED · READ ONLY</div>
+<h1>JJOONI Market Observatory</h1>
+<section id="unlock" hidden>
+<p>처음 한 번만 전용 보안키(64자리)를 붙여넣으세요. 이 기기에만 꺼낼 수 없는 형태로 저장되고, 두 앱에서 이 기기 등록을 공유하지만 각각 별도로 실행됩니다.</p>
+<label for="key">전용 보안키</label>
+<textarea id="key" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="64자리 보안키 붙여넣기"></textarea>
+<button id="go" type="button">이 기기 등록하고 열기</button>
+</section>
+<section id="ready" hidden>
+<p>이 기기는 등록되어 있습니다.</p>
+<div class="links"><a href="./v/market-observatory/">옵저버토리 열기</a></div>
+<button id="refresh" class="ghost" type="button">최신 데이터 확인</button>
+<button id="lock" class="ghost" type="button">두 앱의 기기 등록 해제</button>
+</section>
+<div id="msg" role="status" aria-live="polite"></div>
+</main>
+<script src="../unlock.js"></script>
+</body>
+</html>
