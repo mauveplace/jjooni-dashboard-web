@@ -100,12 +100,12 @@
     let has = false;
     try { has = !!(await getKey()); } catch (_) {}
     show(has);
-    if (has && !new URLSearchParams(location.search).has('locked')) {
+    if (has && (target !== 'legacy' || !params.has('locked'))) {
       try {
         const w = await worker();
         let r = await ask(w, 'reload', 30000);
         if (!r.ok) { msg('최신 화면을 받는 중…'); r = await ask(w, 'update'); }
-        if (r.ok) { location.replace(landing); return; }
+        if (r.ok && r.state !== 'LOCKED') { location.replace(landing); return; }
       } catch (_) {}
       msg('저장된 화면을 열지 못했습니다. 최신 데이터 확인을 눌러주세요.', 'bad');
     }
