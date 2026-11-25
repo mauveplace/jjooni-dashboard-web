@@ -9,7 +9,7 @@ function load(){
 }
 const api=load();
 const manifests=['ct','obs'].map(app=>JSON.parse(fs.readFileSync('app/'+app+'/manifest.webmanifest')));
-const resolved=(m,app,k)=>new URL(m[k],base+app+'/manifest.webmanifest').href;
+const resolved=(m,app,k)=>new URL(m[k],k==='id'?new URL(base).origin:base+app+'/manifest.webmanifest').href;
 test('physical and virtual manifests share canonical identities, independent scopes and icons',()=>{
  const a=api.appManifest('manifest.webmanifest'),b=api.appManifest('market-observatory/manifest.webmanifest');
  for(const [i,app,m] of [[0,'ct',a],[1,'obs',b]]) {
