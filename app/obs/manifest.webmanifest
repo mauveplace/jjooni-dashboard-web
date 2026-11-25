@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "JJOONI Market Observatory",
+  "short_name": "JJOONI Markets",
+  "lang": "ko",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#071b35",
+  "icons": [
+    {
+      "src": "./v/market-observatory/icons/obs-symbol-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./v/market-observatory/icons/obs-symbol-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
