@@ -1,0 +1,19 @@
+name: Independent PWA routing
+on:
+  pull_request:
+    paths: ['app/**','tests/pwa-routing.test.cjs','.github/workflows/pwa-routing.yml']
+  push:
+    branches: [main]
+    paths: ['app/**','tests/pwa-routing.test.cjs','.github/workflows/pwa-routing.yml']
+permissions:
+  contents: read
+jobs:
+  routing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check app/sw.js && node --check app/unlock.js && node --test tests/pwa-routing.test.cjs
